@@ -31,7 +31,6 @@ using System.Timers;
 using static MapleLib.Configuration.UserSettings;
 using HaSharedLibrary;
 using MapleLib.MapleCryptoLib;
-using MapleLib.WzLib.Nx;
 
 namespace HaRepacker.GUI
 {
@@ -376,9 +375,6 @@ namespace HaRepacker.GUI
         }
 
         #region Handlers
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-        }
 
         /// <summary>
         /// Redocks the list of controls on the panel
@@ -437,9 +433,6 @@ namespace HaRepacker.GUI
                         break;
                     case Keys.O: // Open new WZ file
                         openToolStripMenuItem_Click(null, null);
-                        break;
-                    case Keys.I: // Open new Wz format
-                        toolStripMenuItem_newWzFormat_Click(null, null);
                         break;
                     case Keys.N: // New
                         newToolStripMenuItem_Click(null, null);
@@ -717,7 +710,7 @@ namespace HaRepacker.GUI
 
         #region Toolstrip Menu items
         /// <summary>
-        /// Open WZ file
+        /// Open file
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -746,6 +739,9 @@ namespace HaRepacker.GUI
                     return;
 
                 List<string> wzfilePathsToLoad = new List<string>();
+
+                List<string> mapEditToLoad = new List<string>();
+                string mapEditAdd = "";
                 foreach (string filePath in dialog.FileNames)
                 {
                     string filePathLowerCase = filePath.ToLower();
@@ -787,10 +783,17 @@ namespace HaRepacker.GUI
                     }
                     else
                     {
+                        if(Program.ConfigurationManager.UserSettings.MapEdit && !filePath.EndsWith("Map.wz") && !filePath.EndsWith("Map002.wz"))
+                        {
+                            MessageBox.Show("開啟地圖新增模式後請僅手動載入Map.wz(低版本)或 Map002.wz(高版本)", "地圖新增模式警告");
+                            return;
+                        }
+                        
                         wzfilePathsToLoad.Add(filePath); // add to list, so we can load it concurrently
 
                         // Check if there are any related files
                         string[] wzsWithRelatedFiles = { "Map", "Mob", "Skill", "Sound" };
+                        String[] edit = { "Map","Map001", "Map002", "Map2", "Sound", "Sound001" , "Sound2", "Npc", "Mob", "Mob2", "Mob001", "String", "Reactor" };
                         bool bWithRelated = false;
                         string relatedFileName = null;
 
@@ -815,6 +818,22 @@ namespace HaRepacker.GUI
                                 }
                             }
                         }
+
+                        foreach(String wz in edit)
+                        {
+                            if (Program.ConfigurationManager.UserSettings.MapEdit)
+                            {
+                                string[] otherMapWzFiles = Directory.GetFiles(filePath.Substring(0, filePath.LastIndexOf("\\")), wz + ".wz");
+                                foreach (string filePath_Others in otherMapWzFiles)
+                                {
+                                    if (filePath_Others != filePath)
+                                        mapEditToLoad.Add(filePath_Others);
+                                    mapEditAdd = filePath;
+
+
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -827,7 +846,13 @@ namespace HaRepacker.GUI
                 await Task.Run(() =>
                 {
                     List<WzFile> loadedWzFiles = new List<WzFile>();
-                    ParallelLoopResult loop = Parallel.ForEach(wzfilePathsToLoad, filePath =>
+                    List<String> toAdd = Program.ConfigurationManager.UserSettings.MapEdit ? mapEditToLoad : wzfilePathsToLoad;
+                    WzFile origin = null;
+                    if (Program.ConfigurationManager.UserSettings.MapEdit)
+                    {
+                        origin = Program.WzFileManager.LoadWzFile(mapEditAdd, MapleVersionEncryptionSelected);
+                    }
+                    ParallelLoopResult loop = Parallel.ForEach(toAdd, filePath =>
                     {
                         WzFile f = Program.WzFileManager.LoadWzFile(filePath, MapleVersionEncryptionSelected);
                         if (f == null)
@@ -847,90 +872,34 @@ namespace HaRepacker.GUI
                         Thread.Sleep(100); //?
                     }
 
-                    foreach (WzFile wzFile in loadedWzFiles) // add later, once everything is loaded to memory
+                    if (Program.ConfigurationManager.UserSettings.MapEdit && loadedWzFiles.Count > 0)
                     {
-                        Program.WzFileManager.AddLoadedWzFileToMainPanel(wzFile, MainPanel, currentDispatcher);
-                    }
-                }); // load complete
-
-                // Hide panel splash sdcreen
-                MainPanel.OnSetPanelLoadingCompleted();
-            }
-        }
-
-        /// <summary>
-        /// Open new WZ file (KMST) 
-        /// with the split format
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private async void toolStripMenuItem_newWzFormat_Click(object sender, EventArgs e)
-        {
-            Dispatcher currentDispatcher = Dispatcher.CurrentDispatcher;
-
-            WzMapleVersion MapleVersionEncryptionSelected = GetWzMapleVersionByWzEncryptionBoxSelection(encryptionBox.SelectedIndex);
-
-            // Load WZ file
-            using (FolderBrowserDialog fbd = new FolderBrowserDialog()
-            {
-                Description = "Select the WZ folder (Base, Mob, Character, etc)",
-                ShowNewFolderButton = true,
-            })
-            {
-                DialogResult result = fbd.ShowDialog();
-                if (result != DialogResult.OK || string.IsNullOrWhiteSpace(fbd.SelectedPath))
-                    return;
-
-                string[] iniFilesPath = Directory.GetFiles(fbd.SelectedPath, "*.ini", SearchOption.AllDirectories);
-
-                // Search for all '.ini' file, and for each .ini found, proceed to parse all items in the sub directory
-                // merge all parsed directory as a single WZ
-
-                List<string> wzfilePathsToLoad = new List<string>();
-                foreach (string iniFilePath in iniFilesPath)
-                {
-                    string directoryName = Path.GetDirectoryName(iniFilePath);
-                    string[] wzFilesPath = Directory.GetFiles(directoryName, "*.wz", SearchOption.TopDirectoryOnly);
-
-                    foreach (string wzFilePath in wzFilesPath) 
-                    {
-                        wzfilePathsToLoad.Add(wzFilePath);
-                        Debug.WriteLine(wzFilePath);
-                    }
-                }
-
-                // Show splash screen
-                MainPanel.OnSetPanelLoading();
-
-
-                // Load all original WZ files 
-                await Task.Run(() =>
-                {
-                    List<WzFile> loadedWzFiles = new List<WzFile>();
-                    ParallelLoopResult loop = Parallel.ForEach(wzfilePathsToLoad, filePath =>
-                    {
-                        WzFile f = Program.WzFileManager.LoadWzFile(filePath, MapleVersionEncryptionSelected);
-                        if (f == null)
+                        if(loadedWzFiles[0].Version < 150)
                         {
-                            // error should be thrown 
+                            MainPanel.setLowWzFile(loadedWzFiles);
                         }
                         else
                         {
-                            lock (loadedWzFiles)
-                            {
-                                loadedWzFiles.Add(f);
-                            }
+                            MainPanel.setHighWzFile(loadedWzFiles);
                         }
-                    });
-                    while (!loop.IsCompleted)
-                    {
-                        Thread.Sleep(100); //?
+                        
                     }
 
-                    foreach (WzFile wzFile in loadedWzFiles) // add later, once everything is loaded to memory
+                    if (!Program.ConfigurationManager.UserSettings.MapEdit)
                     {
-                        Program.WzFileManager.AddLoadedWzFileToMainPanel(wzFile, MainPanel, currentDispatcher);
+                        foreach (WzFile wzFile in loadedWzFiles) // add later, once everything is loaded to memory
+                        {
+                            Program.WzFileManager.AddLoadedWzFileToMainPanel(wzFile, MainPanel, currentDispatcher);
+                        }
                     }
+                    else
+                    {
+                        Program.WzFileManager.AddLoadedWzFileToMainPanel(origin, MainPanel, currentDispatcher);
+                    }
+                    
+
+                    
+
                 }); // load complete
 
                 // Hide panel splash sdcreen
@@ -938,6 +907,7 @@ namespace HaRepacker.GUI
             }
         }
 
+       
         private void unloadAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (Warning.Warn(HaRepacker.Properties.Resources.MainUnloadAll))
@@ -1098,7 +1068,7 @@ namespace HaRepacker.GUI
 
             string[] wzFilesToDump = (string[])((object[])param)[0];
             string baseDir = (string)((object[])param)[1];
-            WzMapleVersion version = GetWzMapleVersionByWzEncryptionBoxSelection((int)(((object[])param)[2]));
+            WzMapleVersion version = GetWzMapleVersionByWzEncryptionBoxSelection( ((int[])param)[2]);
             IWzFileSerializer serializer = (IWzFileSerializer)((object[])param)[3];
             UpdateProgressBar(MainPanel.mainProgressBar, 0, false, true);
             UpdateProgressBar(MainPanel.mainProgressBar, wzFilesToDump.Length, true, true);
@@ -1175,22 +1145,22 @@ namespace HaRepacker.GUI
 #endif
             List<WzObject> objsToDump = (List<WzObject>)((object[])param)[0];
             string path = (string)((object[])param)[1];
-            ProgressingWzSerializer serializers = (ProgressingWzSerializer)((object[])param)[2];
+            ProgressingWzSerializer serializer = (ProgressingWzSerializer)((object[])param)[2];
 
             UpdateProgressBar(MainPanel.mainProgressBar, 0, false, true);
-            if (serializers is IWzObjectSerializer serializer)
+            if (serializer is IWzObjectSerializer)
             {
                 UpdateProgressBar(MainPanel.mainProgressBar, objsToDump.Count, true, true);
                 foreach (WzObject obj in objsToDump)
                 {
-                    serializer.SerializeObject(obj, path);
+                    ((IWzObjectSerializer)serializer).SerializeObject(obj, path);
                     UpdateProgressBar(MainPanel.mainProgressBar, 1, false, false);
                 }
             }
-            else if (serializers is WzNewXmlSerializer serializer_)
+            else if (serializer is WzNewXmlSerializer)
             {
                 UpdateProgressBar(MainPanel.mainProgressBar, 1, true, true);
-                serializer_.ExportCombinedXml(objsToDump, path);
+                ((WzNewXmlSerializer)serializer).ExportCombinedXml(objsToDump, path);
                 UpdateProgressBar(MainPanel.mainProgressBar, 1, false, false);
 
             }
@@ -1986,33 +1956,71 @@ namespace HaRepacker.GUI
             threadDone = true;
         }
 
-        private void nXForamtToolStripMenuItem_Click(object sender, EventArgs e)
+        private void 補圖ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MainPanel.ParseImg();
+        }
+
+        private void 地圖新增BetaToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (Program.ConfigurationManager.UserSettings.MapEdit)
+            {
+                MainPanel.AddMap();
+                //MessageBox.Show("無開通");
+            }
+            else
+            {
+                //MainPanel.AddMap();
+                MessageBox.Show("請先開啟地圖新增模式後再使用此功能");
+            }
+            
+        }
+
+        private void 讀取節點ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MainPanel.ReadNode();
+        }
+
+       
+
+        private void 技能修改ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog dialog = new OpenFileDialog()
             {
-                Title = HaRepacker.Properties.Resources.SelectWz,
-                Filter = string.Format("{0}|*.wz", HaRepacker.Properties.Resources.WzFilter),
+                Title = "請選擇技能修改txt文字檔",
+                Filter = string.Format("文字檔 (*.txt)|*"),
                 Multiselect = true
             };
 
             if (dialog.ShowDialog() != DialogResult.OK)
                 return;
 
-            string outPath = GetOutputDirectory();
-            if (outPath == string.Empty)
+            try
             {
-                MessageBox.Show(Properties.Resources.MainWzExportError, Properties.Resources.Warning, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                StreamReader sr = new StreamReader(dialog.FileName);
+                MainPanel.editSkill(sr);
+            }catch(Exception er)
+            {
+                MessageBox.Show("技能平衡發生錯誤(請查看txt是否正確填寫)\n" + er.Message);
             }
-
-            WzToNxSerializer serializer = new WzToNxSerializer();
-            threadDone = false;
-            runningThread = new Thread(new ParameterizedThreadStart(RunWzFilesExtraction));
-            runningThread.Start((object)new object[] { dialog.FileNames, outPath, encryptionBox.SelectedIndex, serializer });
-            new Thread(new ParameterizedThreadStart(ProgressBarThread)).Start(serializer);
         }
 
         private void wZ同步ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            new Sync(MainPanel).ShowDialog();
+        }
+
+        private void 地圖同步ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            new MapSync(MainPanel).ShowDialog();
+        }
+
+        private void 商城新增ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            new Commodity(MainPanel).ShowDialog();
+        }
+
+        private void wz同步ToolStripMenuItem_Click_1(object sender, EventArgs e)
         {
             new Sync(MainPanel).ShowDialog();
         }

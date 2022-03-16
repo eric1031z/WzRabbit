@@ -36,7 +36,6 @@ namespace HaRepacker.GUI
             this.versionBox = new HaRepacker.GUI.Input.IntegerInput();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.checkBox_64BitFile = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // encryptionBox
@@ -70,18 +69,10 @@ namespace HaRepacker.GUI
             resources.ApplyResources(this.label2, "label2");
             this.label2.Name = "label2";
             // 
-            // checkBox_64BitFile
-            // 
-            resources.ApplyResources(this.checkBox_64BitFile, "checkBox_64BitFile");
-            this.checkBox_64BitFile.Name = "checkBox_64BitFile";
-            this.checkBox_64BitFile.UseVisualStyleBackColor = true;
-            this.checkBox_64BitFile.CheckedChanged += new System.EventHandler(this.checkBox_64BitFile_CheckedChanged);
-            // 
             // SaveForm
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.checkBox_64BitFile);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.versionBox);
@@ -102,6 +93,5 @@ namespace HaRepacker.GUI
         private IntegerInput versionBox;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.CheckBox checkBox_64BitFile;
     }
 }

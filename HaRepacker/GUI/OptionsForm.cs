@@ -31,9 +31,11 @@ namespace HaRepacker.GUI
             }
             indentBox.Value = Program.ConfigurationManager.UserSettings.Indentation;
             lineBreakBox.SelectedIndex = (int)Program.ConfigurationManager.UserSettings.LineBreakType;
+            mapEdit.Checked = Program.ConfigurationManager.UserSettings.MapEdit;
 
             // Theme color
             themeColor__comboBox.SelectedIndex = Program.ConfigurationManager.UserSettings.ThemeColor;
+            
         }
 
 
@@ -78,7 +80,7 @@ namespace HaRepacker.GUI
             Program.ConfigurationManager.UserSettings.Indentation = indentBox.Value;
             Program.ConfigurationManager.UserSettings.LineBreakType = (LineBreak)lineBreakBox.SelectedIndex;
             Program.ConfigurationManager.UserSettings.ThemeColor = themeColor__comboBox.SelectedIndex;
-
+            Program.ConfigurationManager.UserSettings.MapEdit = mapEdit.Checked;
             Program.ConfigurationManager.Save();
             Close();
         }

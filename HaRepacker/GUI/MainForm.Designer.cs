@@ -1,5 +1,6 @@
 ﻿using HaRepacker.GUI.Panels;
 
+
 namespace HaRepacker.GUI
 {
     partial class MainForm
@@ -35,7 +36,6 @@ namespace HaRepacker.GUI
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.newToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem_newWzFormat = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -76,7 +76,6 @@ namespace HaRepacker.GUI
             this.xMLToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.rawDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.imgToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.nXForamtToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.xMLToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.privateServerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -93,6 +92,7 @@ namespace HaRepacker.GUI
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
             this.searchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.補圖ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.extrasToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fHMappingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renderMapToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -107,7 +107,7 @@ namespace HaRepacker.GUI
             this.AbortButton = new System.Windows.Forms.Button();
             this.tabControl_MainPanels = new System.Windows.Forms.TabControl();
             this.button_addTab = new System.Windows.Forms.Button();
-            this.wZ同步ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.wz同步ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mainMenu.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -130,7 +130,6 @@ namespace HaRepacker.GUI
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.newToolStripMenuItem,
             this.openToolStripMenuItem,
-            this.toolStripMenuItem_newWzFormat,
             this.saveToolStripMenuItem,
             this.toolStripSeparator5,
             this.copyToolStripMenuItem,
@@ -154,13 +153,6 @@ namespace HaRepacker.GUI
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
             resources.ApplyResources(this.openToolStripMenuItem, "openToolStripMenuItem");
             this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
-            // 
-            // toolStripMenuItem_newWzFormat
-            // 
-            this.toolStripMenuItem_newWzFormat.Image = global::HaRepacker.Properties.Resources.folder;
-            this.toolStripMenuItem_newWzFormat.Name = "toolStripMenuItem_newWzFormat";
-            resources.ApplyResources(this.toolStripMenuItem_newWzFormat, "toolStripMenuItem_newWzFormat");
-            this.toolStripMenuItem_newWzFormat.Click += new System.EventHandler(this.toolStripMenuItem_newWzFormat_Click);
             // 
             // saveToolStripMenuItem
             // 
@@ -400,7 +392,8 @@ namespace HaRepacker.GUI
             this.optionsToolStripMenuItem,
             this.toolStripSeparator8,
             this.searchToolStripMenuItem,
-            this.wZ同步ToolStripMenuItem});
+            this.補圖ToolStripMenuItem,
+            this.wz同步ToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             resources.ApplyResources(this.toolsToolStripMenuItem, "toolsToolStripMenuItem");
             // 
@@ -409,8 +402,7 @@ namespace HaRepacker.GUI
             this.exportFilesToXMLToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.xMLToolStripMenuItem,
             this.rawDataToolStripMenuItem,
-            this.imgToolStripMenuItem,
-            this.nXForamtToolStripMenuItem});
+            this.imgToolStripMenuItem});
             this.exportFilesToXMLToolStripMenuItem.Image = global::HaRepacker.Properties.Resources.folder_go;
             this.exportFilesToXMLToolStripMenuItem.Name = "exportFilesToXMLToolStripMenuItem";
             resources.ApplyResources(this.exportFilesToXMLToolStripMenuItem, "exportFilesToXMLToolStripMenuItem");
@@ -432,12 +424,6 @@ namespace HaRepacker.GUI
             this.imgToolStripMenuItem.Name = "imgToolStripMenuItem";
             resources.ApplyResources(this.imgToolStripMenuItem, "imgToolStripMenuItem");
             this.imgToolStripMenuItem.Click += new System.EventHandler(this.imgToolStripMenuItem_Click);
-            // 
-            // nXForamtToolStripMenuItem
-            // 
-            this.nXForamtToolStripMenuItem.Name = "nXForamtToolStripMenuItem";
-            resources.ApplyResources(this.nXForamtToolStripMenuItem, "nXForamtToolStripMenuItem");
-            this.nXForamtToolStripMenuItem.Click += new System.EventHandler(this.nXForamtToolStripMenuItem_Click);
             // 
             // exportDataToolStripMenuItem
             // 
@@ -546,6 +532,12 @@ namespace HaRepacker.GUI
             this.searchToolStripMenuItem.Name = "searchToolStripMenuItem";
             this.searchToolStripMenuItem.Click += new System.EventHandler(this.searchToolStripMenuItem_Click);
             // 
+            // 補圖ToolStripMenuItem
+            // 
+            this.補圖ToolStripMenuItem.Name = "補圖ToolStripMenuItem";
+            resources.ApplyResources(this.補圖ToolStripMenuItem, "補圖ToolStripMenuItem");
+            this.補圖ToolStripMenuItem.Click += new System.EventHandler(this.補圖ToolStripMenuItem_Click);
+            // 
             // extrasToolStripMenuItem
             // 
             this.extrasToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -646,11 +638,11 @@ namespace HaRepacker.GUI
             this.button_addTab.UseVisualStyleBackColor = true;
             this.button_addTab.Click += new System.EventHandler(this.Button_addTab_Click);
             // 
-            // wZ同步ToolStripMenuItem
+            // wz同步ToolStripMenuItem
             // 
-            this.wZ同步ToolStripMenuItem.Name = "wZ同步ToolStripMenuItem";
-            resources.ApplyResources(this.wZ同步ToolStripMenuItem, "wZ同步ToolStripMenuItem");
-            this.wZ同步ToolStripMenuItem.Click += new System.EventHandler(this.wZ同步ToolStripMenuItem_Click);
+            this.wz同步ToolStripMenuItem.Name = "wz同步ToolStripMenuItem";
+            resources.ApplyResources(this.wz同步ToolStripMenuItem, "wz同步ToolStripMenuItem");
+            this.wz同步ToolStripMenuItem.Click += new System.EventHandler(this.wz同步ToolStripMenuItem_Click_1);
             // 
             // MainForm
             // 
@@ -660,10 +652,10 @@ namespace HaRepacker.GUI
             this.Controls.Add(this.tabControl_MainPanels);
             this.Controls.Add(this.AbortButton);
             this.Controls.Add(this.mainMenu);
+            this.Icon = global::HaRepacker.Properties.Resources.rabbit;
             this.MainMenuStrip = this.mainMenu;
             this.Name = "MainForm";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
-            this.Load += new System.EventHandler(this.MainForm_Load);
             this.SizeChanged += new System.EventHandler(this.MainForm_SizeChanged);
             this.mainMenu.ResumeLayout(false);
             this.mainMenu.PerformLayout();
@@ -747,9 +739,8 @@ namespace HaRepacker.GUI
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
-        private System.Windows.Forms.ToolStripMenuItem nXForamtToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_newWzFormat;
-        private System.Windows.Forms.ToolStripMenuItem wZ同步ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 補圖ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem wz同步ToolStripMenuItem;
     }
 }
 

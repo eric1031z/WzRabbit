@@ -32,6 +32,10 @@ using static MapleLib.Configuration.UserSettings;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.IO;
+using Rectangle = System.Drawing.Rectangle;
+using Point = System.Drawing.Point;
+using Size = System.Drawing.Size;
+using Color = System.Drawing.Color;
 
 namespace HaRepacker.GUI.Panels
 {
@@ -968,81 +972,6 @@ namespace HaRepacker.GUI.Panels
             }
         }
 
-
-        private void FixLinkForOldMS(WzCanvasProperty selectedWzCanvas, WzNode parentCanvasNode)
-        {
-            WzImageProperty linkedTarget = selectedWzCanvas.GetLinkedWzImageProperty();
-            if (selectedWzCanvas.HaveInlinkProperty()) // if its an inlink property, remove that before updating base image.
-            {
-                selectedWzCanvas.RemoveProperty(selectedWzCanvas[WzCanvasProperty.InlinkPropertyName]);
-                WzNode childInlinkNode = WzNode.GetChildNode(parentCanvasNode, WzCanvasProperty.InlinkPropertyName);
-
-                childInlinkNode.DeleteWzNode(); // Delete '_inlink' node
-            }
-            if (selectedWzCanvas.HaveOutlinkProperty()) // if its an outlink property, remove that before updating base image.
-            {
-                selectedWzCanvas.RemoveProperty(selectedWzCanvas[WzCanvasProperty.OutlinkPropertyName]);
-                WzNode childOutlinkNode = WzNode.GetChildNode(parentCanvasNode, WzCanvasProperty.OutlinkPropertyName);
-
-                childOutlinkNode.DeleteWzNode(); // Delete '_outlink' node
-            }
-
-            selectedWzCanvas.PngProperty.SetImage(linkedTarget.GetBitmap());
-
-            // Updates
-            selectedWzCanvas.ParentImage.Changed = true;
-        }
-
-        private void CheckImageNodeRecursively(WzNode node)
-        {
-            if (node.Tag is WzImage img)
-            {
-                if (!img.Parsed)
-                {
-                    img.ParseImage();
-                }
-                node.Reparse();
-            }
-
-            if (node.Tag is WzCanvasProperty property)
-            {
-                FixLinkForOldMS(property, node);
-            }
-            else
-            {
-                foreach (WzNode child in node.Nodes)
-                    CheckImageNodeRecursively(child);
-            }
-            WzNode hash = WzNode.GetChildNode(node, "_hash");
-            if (hash != null) { hash.Remove(); }
-        }
-
-
-        /// <summary>
-        /// Fix the '_inlink' and '_outlink' image property for compatibility to old MapleStory ver.
-        /// </summary>
-        public void FixLinkForOldMS_Click()
-        {
-            // handle multiple nodes...
-            int nodeCount = DataTree.SelectedNodes.Count;
-            DateTime t0 = DateTime.Now;
-            foreach (WzNode node in DataTree.SelectedNodes)
-            {
-                CheckImageNodeRecursively(node);
-            }
-
-            // Check for updates to the changed canvas image that the user is currently selecting
-            if (DataTree.SelectedNode.Tag is WzCanvasProperty) // only allow button click if its an image property
-            {
-                System.Drawing.Image img = ((WzCanvasProperty) (DataTree.SelectedNode.Tag)).GetLinkedWzCanvasBitmap();
-                if (img != null)
-                    canvasPropBox.Image = ((System.Drawing.Bitmap)img).ToWpfBitmap();
-            }
-
-            double ms = (DateTime.Now - t0).TotalMilliseconds;
-            MessageBox.Show("Done.\r\nElapsed time: " + ms + " ms (avg: " + (ms / nodeCount) + ")");
-        }
-
         /// <summary>
         /// 
         /// </summary>
@@ -1142,7 +1071,7 @@ namespace HaRepacker.GUI.Panels
             {
                 FileName = fileName,
                 Title = "Select where to save the image...",
-                Filter = "Portable Network Graphics (*.png)|*.png|CompuServe Graphics Interchange Format (*.gif)|*.gif|Bitmap (*.bmp)|*.bmp|Joint Photographic Experts Group Format (*.jpg)|*.jpg|Tagged Image File Format (*.tif)|*.tif"
+                Filter = "Portable Network Grpahics (*.png)|*.png|CompuServe Graphics Interchange Format (*.gif)|*.gif|Bitmap (*.bmp)|*.bmp|Joint Photographic Experts Group Format (*.jpg)|*.jpg|Tagged Image File Format (*.tif)|*.tif"
             };
             if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
             switch (dialog.FilterIndex)
@@ -1307,12 +1236,6 @@ namespace HaRepacker.GUI.Panels
         {
             if (!Warning.Warn(Properties.Resources.MainConfirmCopy) || bPasteTaskActive)
                 return;
-
-            foreach (WzObject obj in clipboard)
-            {
-                //this causes minor weirdness with png's in copied nodes but otherwise memory is not free'd 
-                obj.Dispose();
-            }
 
             clipboard.Clear();
 
@@ -1981,5 +1904,1940 @@ namespace HaRepacker.GUI.Panels
         }
         #endregion
 
+        #region custom
+        public void ParseImg()
+        {
+            Queue<WzNode> Nodes = new Queue<WzNode>();
+            foreach (WzNode Node in DataTree.SelectedNodes)
+            {
+                Nodes.Enqueue(Node);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            while (Nodes.Count > 0)
+            {
+                WzNode n = Nodes.Dequeue();
+                ParseNode(n, sb);
+
+                if (n.Tag is WzImage)
+                {
+                    WzImage img = (WzImage)n.Tag;
+                    foreach (WzImageProperty childs in img.WzProperties)
+                    {
+                        WzNode child = new WzNode(childs);
+                        Nodes.Enqueue(child);
+                    }
+                }
+                else
+                {
+                    foreach (WzNode child in n.Nodes)
+                    {
+                        Nodes.Enqueue(child);
+                    }
+                }
+            }
+            MessageBox.Show("已完成對選取節點的補圖 - 以下為報表\n\n" + sb);
+        }
+
+
+        public void ParseImg(WzNode node)
+        {
+            Queue<WzNode> Nodes = new Queue<WzNode>();
+            foreach (WzNode Node in node.Nodes)
+            {
+                Nodes.Enqueue(Node);
+            }
+
+            while (Nodes.Count > 0)
+            {
+                WzNode n = Nodes.Dequeue();
+                ParseNode(n);
+
+                if (n.Tag is WzImage)
+                {
+                    WzImage img = (WzImage)n.Tag;
+                    foreach (WzImageProperty childs in img.WzProperties)
+                    {
+                        WzNode child = new WzNode(childs);
+                        Nodes.Enqueue(child);
+                    }
+                }
+                else
+                {
+                    foreach (WzNode child in n.Nodes)
+                    {
+                        Nodes.Enqueue(child);
+                    }
+                }
+            }
+        }
+
+        public WzFile FindTopNode(String name)
+        {
+            WzFile ret = null;
+            foreach (WzNode data in DataTree.Nodes)
+            {
+                WzFile file = (WzFile)data.Tag;
+                if (file.Name == name + ".wz")
+                {
+                    ret = file;
+                }
+            }
+            return ret;
+        }
+
+        public WzFile FindTopNodeMapEdit(String name)
+        {
+            WzFile ret = null;
+            if (name == "Map002") return FindTopNode("Map002");
+            if (HList == null) return getHighWzFile(name + ".wz");
+            foreach(WzFile f in HList)
+            {
+                if(f.Name == name + ".wz")
+                {
+                    ret = f;
+                }
+            }
+
+            return ret;
+        }
+
+
+
+        public void ParseNode(WzNode Node, StringBuilder sb)
+        {
+
+            if (Node.Text == "_inlink")
+            {
+                WzImage TopImage = ((WzImageProperty)Node.Parent.Tag).ParentImage;
+                String[] Direction = ((WzStringProperty)Node.Tag).Value.ToString().Split(new char[] { '/' });
+                WzImageProperty pointer = TopImage.GetWzImageProperty(Direction[0]);
+                if (pointer == null)
+                {
+                    sb.Append("於: " + ((WzStringProperty)Node.Tag).Value.ToString() + " 中的 : " + Direction[0] + " 出現錯誤\n");
+                    return;
+                }
+                for (int i = 1; i < Direction.Length; i++)
+                {
+                    pointer = pointer.GetProperty(Direction[i]);
+                    if (pointer == null)
+                    {
+                        sb.Append("於: " + ((WzStringProperty)Node.Tag).Value.ToString() + " 中的 : " + Direction[i] + " 出現錯誤\n");
+                        return;
+                    }
+                }
+                if (((WzCanvasProperty)pointer).PngProperty.GetBitmap() != null)
+                {
+                    ((WzCanvasProperty)Node.Parent.Tag).PngProperty.SetImage(((WzCanvasProperty)pointer).PngProperty.GetBitmap());
+                    ((WzCanvasProperty)Node.Parent.Tag).ParentImage.Changed = true;
+                }
+
+            }
+            else if (Node.Text == "_outlink")
+            {
+                String[] DirectionO = ((WzStringProperty)Node.Tag).Value.ToString().Split(new char[] { '/' });
+                List<String[]> tryAndFind = new List<String[]>();
+                if (DirectionO[0].Contains("Map"))
+                {
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind[0][0] = "Map";
+                    tryAndFind[1][0] = "Map001";
+                    tryAndFind[2][0] = "Map002";
+                    tryAndFind[3][0] = "Map2";
+                }
+                else if (DirectionO[0].Contains("Mob"))
+                {
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind[0][0] = "Mob";
+                    tryAndFind[1][0] = "Mob2";
+                    tryAndFind[2][0] = "Mob001";
+                }
+                else if (DirectionO[0].Contains("Skill"))
+                {
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind[0][0] = "Skill";
+                    tryAndFind[1][0] = "Skill001";
+                    tryAndFind[2][0] = "Skill002";
+                }
+                else
+                {
+                    tryAndFind.Add(DirectionO);
+                }
+
+                Boolean found = false;
+                foreach (String[] Direction in tryAndFind)
+                {
+                    
+                    WzFile TopNode = FindTopNode(Direction[0]);
+                    if (TopNode == null)
+                    {
+                        continue;
+                    }
+                    int index = getImgIndex(Direction);
+
+                    WzDirectory Dic = TopNode.WzDirectory;
+                    Boolean findDic = true;
+                    for (int i = 1; i < index; i++)
+                    {
+                        Dic = Dic.GetDirectoryByName(Direction[i]);
+                        if (Dic == null)
+                        {
+                            findDic = false;
+                            break;
+                        }
+                    }
+
+                    if (!findDic)
+                    {
+                        continue;
+                    }
+
+                    WzImage Img = Dic.GetImageByName(Direction[index]);
+                    if (Img == null)
+                    {
+                        continue;
+                    }
+                    WzImageProperty pointer = Img.GetWzImageProperty(Direction[index + 1]);
+                    if (pointer == null)
+                    {
+                        continue;
+                    }
+
+                    Boolean findPointer = true;
+                    for (int i = index + 2; i < Direction.Length; i++)
+                    {
+                        pointer = pointer.GetProperty(Direction[i]);
+                        if (pointer == null)
+                        {
+                            findPointer = false;
+                            break;
+                        }
+                    }
+                    if (!findPointer)
+                    {
+                        continue;
+                    }
+                    if (((WzCanvasProperty)pointer).PngProperty.GetBitmap() != null)
+                    {
+                        ((WzCanvasProperty)Node.Parent.Tag).PngProperty.SetImage(((WzCanvasProperty)pointer).PngProperty.GetBitmap());
+                        ((WzCanvasProperty)Node.Parent.Tag).ParentImage.Changed = true;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if(!found)
+                {
+                    sb.Append("於: " + ((WzStringProperty)Node.Tag).Value.ToString() + " 中的出現錯誤,對應節點不存在\n");
+                }
+            }
+        }
+
+        public void ParseNode(WzNode Node)
+        {
+            if (Node.Text == "_inlink")
+            {
+                WzImage TopImage = ((WzImageProperty)Node.Parent.Tag).ParentImage;
+                String[] Direction = ((WzStringProperty)Node.Tag).Value.ToString().Split(new char[] { '/' });
+                WzImageProperty pointer = TopImage.GetWzImageProperty(Direction[0]);
+                if (pointer == null)
+                {
+
+                    return;
+                }
+                for (int i = 1; i < Direction.Length; i++)
+                {
+                    pointer = pointer.GetProperty(Direction[i]);
+                    if (pointer == null)
+                    {
+                       
+                        return;
+                    }
+                }
+                if (((WzCanvasProperty)pointer).PngProperty.GetBitmap() != null)
+                {
+                    ((WzCanvasProperty)Node.Parent.Tag).PngProperty.SetImage(((WzCanvasProperty)pointer).PngProperty.GetBitmap());
+                    ((WzCanvasProperty)Node.Parent.Tag).ParentImage.Changed = true;
+                }
+
+            }
+            else if (Node.Text == "_outlink")
+            {
+                String[] DirectionO = ((WzStringProperty)Node.Tag).Value.ToString().Split(new char[] { '/' });
+                List<String[]> tryAndFind = new List<String[]>();
+                if (DirectionO[0].Contains("Map"))
+                {
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind[0][0] = "Map";
+                    tryAndFind[1][0] = "Map001";
+                    tryAndFind[2][0] = "Map002";
+                    tryAndFind[3][0] = "Map2";
+                }
+                else if (DirectionO[0].Contains("Mob"))
+                {
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind[0][0] = "Mob";
+                    tryAndFind[1][0] = "Mob2";
+                    tryAndFind[2][0] = "Mob001";
+                }
+                else if (DirectionO[0].Contains("Skill"))
+                {
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind.Add((String[])DirectionO.Clone());
+                    tryAndFind[0][0] = "Skill";
+                    tryAndFind[1][0] = "Skill001";
+                    tryAndFind[2][0] = "Skill002";
+                }
+                else
+                {
+                    tryAndFind.Add(DirectionO);
+                }
+
+     
+                foreach (String[] Direction in tryAndFind)
+                {
+
+                    WzFile TopNode = FindTopNodeMapEdit(Direction[0]);
+                    if (TopNode == null)
+                    {
+                        continue;
+                    }
+                    int index = getImgIndex(Direction);
+
+                    WzDirectory Dic = TopNode.WzDirectory;
+                    Boolean findDic = true;
+                    for (int i = 1; i < index; i++)
+                    {
+                        Dic = Dic.GetDirectoryByName(Direction[i]);
+                        if (Dic == null)
+                        {
+                            findDic = false;
+                            break;
+                        }
+                    }
+
+                    if (!findDic)
+                    {
+                        continue;
+                    }
+
+                    WzImage Img = Dic.GetImageByName(Direction[index]);
+                    if (Img == null)
+                    {
+                        continue;
+                    }
+                    WzImageProperty pointer = Img.GetWzImageProperty(Direction[index + 1]);
+                    if (pointer == null)
+                    {
+                        continue;
+                    }
+
+                    Boolean findPointer = true;
+                    for (int i = index + 2; i < Direction.Length; i++)
+                    {
+                        pointer = pointer.GetProperty(Direction[i]);
+                        if (pointer == null)
+                        {
+                            findPointer = false;
+                            break;
+                        }
+                    }
+                    if (!findPointer)
+                    {
+                        continue;
+                    }
+                    if (((WzCanvasProperty)pointer).PngProperty.GetBitmap() != null)
+                    {
+                        ((WzCanvasProperty)Node.Parent.Tag).PngProperty.SetImage(((WzCanvasProperty)pointer).PngProperty.GetBitmap());
+                        ((WzCanvasProperty)Node.Parent.Tag).ParentImage.Changed = true;
+                        break;
+                    }
+                }
+
+            }
+        }
+
+
+
+        private int getImgIndex(String[] s)
+        {
+            int index = -1;
+            foreach (String x in s)
+            {
+                if (x.Contains(".img"))
+                {
+                    index = s.ToList().IndexOf(x);
+                }
+            }
+            return index;
+        }
+
+        public List<HashSet<String>> GetMapData()
+        {
+
+            HashSet<String> BackData = new HashSet<String>();
+            HashSet<String> ObjData = new HashSet<String>();
+            HashSet<String> TileData = new HashSet<String>();
+
+            HashSet<String> NpcData = new HashSet<String>();
+            HashSet<String> MobData = new HashSet<String>();
+            HashSet<String> MapData = new HashSet<String>();
+            HashSet<String> StringData = new HashSet<String>();
+            HashSet<String> ReactorData = new HashSet<String>();
+            HashSet<String> SoundData = new HashSet<String>();
+
+            List<HashSet<String>> ret = new List<HashSet<String>>();
+            
+            foreach(WzNode node in DataTree.SelectedNodes)
+            {
+                WzImage img = (WzImage)node.Tag;
+                MapData.Add(img.Name.Split(new char[] {'.'})[0]);
+                WzImageProperty info = img.GetWzImageProperty("info");
+                if(info != null)
+                {
+                    WzImageProperty bgm = info.GetProperty("bgm");
+                    String nsound = ((WzStringProperty)bgm).Value;
+                    SoundData.Add(nsound);
+                }
+                
+                foreach(WzImageProperty prop in img.WzProperties) //內容
+                {
+                    int num = 0;
+                    if (int.TryParse(prop.Name, out num)) //處理obj tile
+                    {
+                        
+                        WzImageProperty obj = prop.GetProperty("obj");
+                        if (obj != null)
+                        {
+                            foreach (WzImageProperty item in obj.WzProperties)
+                            {
+                                WzImageProperty s = item.GetProperty("oS");
+                                if (s != null)
+                                {
+                                    String oS = ((WzStringProperty)s).Value;
+                                    ObjData.Add(oS);
+                                }
+                            }
+                        }
+
+                        WzImageProperty tile = prop.GetProperty("info");
+                        if (tile != null)
+                        {
+                            WzImageProperty tS = tile.GetProperty("tS");
+                            if (tS != null)
+                            {
+                                String v = ((WzStringProperty)tS).Value;
+                                TileData.Add(v);
+                            }
+                        }
+                    }
+                    else if (prop.Name.Equals("back"))
+                    {
+                        //back
+                        WzImageProperty back = prop;
+                        foreach (WzImageProperty item in back.WzProperties)
+                        {
+                            WzImageProperty s = item.GetProperty("bS");
+                            if (s == null) continue;
+                            String bS = ((WzStringProperty)s).Value;
+                            BackData.Add(bS);
+                        }
+                    }
+                    else if (prop.Name.Equals("life"))
+                    {
+                        //life
+                        WzImageProperty life = prop;
+                        if (life == null) continue;
+
+                        foreach (WzImageProperty item in life.WzProperties)
+                        {
+                            WzImageProperty type = item.GetProperty("type");
+                            if (type == null) continue;
+
+                            String tp = ((WzStringProperty)type).Value;
+                            HashSet<String> lifeData;
+                            String types = "";
+                            lifeData = tp.Equals("n") ? NpcData : MobData;
+                            types = tp.Equals("n") ? "Npc.img" : "Mob.img";
+                            WzImageProperty id = item.GetProperty("id");
+                            if (id == null) continue;
+                            if (id is WzIntProperty)
+                            {
+                                String i = ((WzIntProperty)id).Value.ToString();
+                                lifeData.Add(i);
+                                StringData.Add(types + "/" + i);
+                                if (types.Equals("Mob.img"))
+                                {
+                                    SoundData.Add("Mob/" + i);
+                                }
+                            }
+                            else if (id is WzStringProperty)
+                            {
+                                String i = ((WzStringProperty)id).Value;
+                                lifeData.Add(i);
+                                StringData.Add(types + "/" + i);
+                                if (types.Equals("Mob.img"))
+                                {
+                                    SoundData.Add("Mob/" + i);
+                                }
+                            }
+                        }
+                    }else if (prop.Name.Equals("reactor"))
+                    {
+                        WzImageProperty reac = prop;
+                        foreach(WzImageProperty item in reac.WzProperties)
+                        {
+                            WzImageProperty id = item.GetProperty("id");
+                            if (id is WzIntProperty)
+                            {
+                                String i = ((WzIntProperty)id).Value.ToString();
+                                ReactorData.Add(i);
+                            }
+                            else if (id is WzStringProperty)
+                            {
+                                String i = ((WzStringProperty)id).Value;
+                                ReactorData.Add(i);
+                            }
+                        }
+                    }
+                }
+            }
+
+            ret.Add(ObjData);
+            ret.Add(BackData);
+            ret.Add(TileData);
+            ret.Add(NpcData);
+            ret.Add(MobData);
+            ret.Add(MapData);
+            ret.Add(StringData);
+            ret.Add(ReactorData);
+            ret.Add(SoundData);
+            return ret;
+        }
+
+        private List<WzFile> HList;
+        private List<WzFile> LList;
+
+        public void setHighWzFile(List<WzFile> x)
+        {
+            this.HList = x;
+        }
+
+        public void setLowWzFile(List<WzFile> x)
+        {
+            this.LList = x;
+        }
+
+        public List<WzFile> getLowFile()
+        {
+            return LList;
+        }
+
+        public WzFile getLowFile(String name)
+        {
+            foreach(WzFile file in LList)
+            {
+                if(file.Name == name && (file.Version < 150))
+                {
+                    return file;
+                }
+            }
+            return null;
+        }
+
+        
+
+        public WzFile getHighFile(String name)
+        {
+            foreach (WzFile file in HList)
+            {
+                if (file.Name == name && (file.Version >= 150))
+                {
+                    return file;
+                }
+            }
+
+            return null;
+        }
+
+        public WzNode FindHighNode(String path)
+        {
+            String[] data = path.Split(new char[] { '/' });
+            WzFile file = data[0] == "Map002.wz" ? FindTopNode("Map002") : getHighFile(data[0]); //wz目錄
+            if (file == null) return null;
+            WzDirectory dic = file.WzDirectory;
+            for(int i = 1; i < data.Length-1; i++)
+            {
+                dic = dic.GetDirectoryByName(data[i]);
+                if(dic == null)
+                {
+                    return null;
+                }
+            }
+
+            WzImage img = dic.GetImageByName(data[data.Length - 1] + ".img");
+            if (img == null) return null;
+            WzNode ret = new WzNode(img);
+            return ret;
+        }
+
+        public WzDirectory FindLowNode(String path)
+        {
+            String[] data = path.Split(new char[] { '/' });
+            WzFile file = data[0] == "Map.wz" ? FindTopNode("Map") : getLowFile(data[0]); //wz目錄
+            if (file == null) return null;
+            WzDirectory dic = file.WzDirectory;
+            for (int i = 1; i < data.Length - 1; i++)
+            {
+                dic = dic.GetDirectoryByName(data[i]);
+                if (dic == null)
+                {
+                    return null;
+                }
+            }
+            return dic;
+        }
+
+        public void modifyLowMob(WzNode node)
+        {
+            foreach(WzNode n in node.Nodes)
+            {
+                if (n.Text.Contains("attack"))
+                {
+                    WzImageProperty prop = (WzImageProperty)n.Tag;
+                    WzImageProperty info = prop.GetProperty("info");
+                    if(info != null)
+                    {
+                        WzImageProperty range = info.GetProperty("range");
+                        if(range != null && range.GetProperty("sp") != null)
+                        {
+                            WzVectorProperty sp = (WzVectorProperty)range.GetProperty("sp");
+                            WzIntProperty r = (WzIntProperty)range.GetProperty("r");
+                            WzVectorProperty rb = new WzVectorProperty("rb", new WzIntProperty("X", Math.Abs(sp.X.Value)), new WzIntProperty("Y", Math.Abs(sp.Y.Value)));
+                            WzVectorProperty It = new WzVectorProperty("lt", new WzIntProperty("X", Math.Abs(sp.X.Value)*-1), new WzIntProperty("Y", Math.Abs(sp.Y.Value)*-1));
+                            ((WzSubProperty)range).AddProperty(rb);
+                            ((WzSubProperty)range).AddProperty(It);
+                            ((WzSubProperty)range).RemoveProperty(sp);
+                            if(r != null) ((WzSubProperty)range).RemoveProperty(r);
+                        }
+                    }
+                }
+            }
+
+            WzImage img = (WzImage)node.Tag;
+            img.Changed = true;
+        }
+
+
+        public void addMobRevive(WzNode node, HashSet<String> str, HashSet<String> sound)
+        {
+            foreach (WzNode n in node.Nodes)
+            {
+                if (n.Text.Contains("info"))
+                {
+                    WzImageProperty revive = ((WzImageProperty)n.Tag).GetProperty("revive");
+                    if (revive != null)
+                    {
+                        foreach (WzImageProperty m in revive.WzProperties)
+                        {
+                            String id;
+                            if (m is WzStringProperty)
+                            {
+                                id = ((WzStringProperty)m).Value;
+                            }
+                            else
+                            {
+                                id = ((WzIntProperty)m).Value.ToString();
+                            }
+
+                            id += ".img";
+
+                            WzDirectory mob = getLowFile("Mob.wz").WzDirectory;
+                            String[] test = { "Mob.wz", "Mob2.wz", "Mob001.wz" };
+                            if (mob.GetImageByName(id) != null) continue;
+
+                            foreach (String wz in test)
+                            {
+                                WzDirectory Hmob = getHighFile(wz).WzDirectory;
+                                WzImage linkadd = Hmob.GetImageByName(id);
+                                if (linkadd == null) continue;
+
+                                linkadd.ParseImage();
+                                WzNode tt = new WzNode(linkadd);
+                                ParseImg(tt);
+                                modifyLowMob(tt);
+                                String ss = id.Split(new char[] { '.' })[0];
+                                str.Add("Mob.img/" + ss);
+                                sound.Add("Mob/" + ss);
+                                mob.AddImage(linkadd.DeepClone());
+                                mob.GetImageByName(id).Changed = true;
+                            }
+
+                        }
+                    }
+                }
+            }
+
+            WzImage img = (WzImage)node.Tag;
+            img.Changed = true;
+        }
+
+        public void findJsonNode(WzNode n)
+        {
+            
+            Queue<WzNode> que = new Queue<WzNode>();
+            WzImage img = (WzImage)n.Tag;
+            foreach(WzImageProperty pp in img.WzProperties)
+            {
+                WzNode node = new WzNode(pp);
+                que.Enqueue(node);
+            }
+            
+            while(que.Count > 0)
+            {
+                WzNode prop = que.Dequeue();
+                if (prop.Text.Contains(".") || (!((WzObject)prop.Tag is WzSubProperty) && prop.Text == "spine"))
+                {
+                    prop.DeleteWzNode();
+                }
+                else
+                {
+
+                    foreach (WzNode p in prop.Nodes)
+                    {
+                        que.Enqueue(p);
+                    }
+
+                }
+            }
+            ((WzImage)n.Tag).Changed = true;
+        }
+
+
+        public Tuple<HashSet<String>, HashSet<String>> getLowMapInfo()
+        {
+            HashSet<String> list = new HashSet<String>();
+            HashSet<String> main = new HashSet<string>();
+            WzDirectory file = FindTopNode("Map").WzDirectory;
+            if (file == null) return new Tuple<HashSet<String>, HashSet<String>>(list,main);
+
+            WzDirectory dic = file.GetDirectoryByName("Map");
+            foreach(WzDirectory p in dic.WzDirectories)
+            {
+                foreach(WzImage img in p.WzImages)
+                {
+                    foreach(WzImageProperty ii in img.WzProperties)
+                    {
+                        main.Add(ii.Name);
+                        if (ii.Name == "info")
+                        {
+                            foreach (WzImageProperty x in ii.WzProperties)
+                            {
+                                list.Add(x.Name);
+                            }
+                        }
+                    }
+                    
+                    
+                }
+            }
+            return new Tuple<HashSet<String>, HashSet<String>>(list, main);
+        }
+       
+
+
+        public void modifyLowNpc(WzNode node, HashSet<String> str)
+        {
+            WzImage img = (WzImage)node.Tag;
+            foreach(WzImageProperty prop in img.WzProperties.ToArray())
+            {
+                if(prop.Name.Contains("condition"))
+                {
+                    prop.Remove();
+                }
+
+                if(prop.Name == "info")
+                {
+                    foreach(WzImageProperty pt in prop.WzProperties.ToArray())
+                    {
+                        if(pt.Name == "link")
+                        {
+                            String id;
+                            if(pt is WzStringProperty)
+                            {
+                                id = ((WzStringProperty)pt).Value;
+                            }
+                            else
+                            {
+                                id = ((WzIntProperty)pt).Value.ToString();
+                            }
+
+                            id += ".img";
+
+                            WzDirectory npc = getLowFile("Npc.wz").WzDirectory;
+                            WzDirectory Hnpc = getHighFile("Npc.wz").WzDirectory;
+                            if (npc.GetImageByName(id) == null)
+                            {
+                                WzImage linkadd = Hnpc.GetImageByName(id);
+                                if(linkadd != null)
+                                {
+                                    linkadd.ParseImage();
+                                    WzNode tt = new WzNode(linkadd);
+                                    ParseImg(tt);
+                                    String ss = id.Split(new char[] { '.' })[0];
+                                    str.Add("Npc.img/" + ss);
+                                    modifyLowNpc(tt, str);
+                                    npc.AddImage(linkadd.DeepClone());
+                                    npc.GetImageByName(id).Changed = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            img.Changed = true;
+        }
+
+
+        public void AddMap()
+        {
+            List<HashSet<String>> data = GetMapData();
+            StringBuilder sb = new StringBuilder();
+            StringBuilder error = new StringBuilder();
+            sb.Append("-----------地圖同步\n\n");
+            sb.Append("[已讀取低版本WZ檔案(Map.wz以外)]\n");
+            foreach(WzFile fx in LList)
+            {
+                sb.Append(fx.Name + ",");
+            }
+            sb.Append("\n\n");
+            sb.Append("[已讀取高版本WZ檔案(Map002.wz以外)]\n");
+            foreach (WzFile fx in HList)
+            {
+                sb.Append(fx.Name + ",");
+            }
+            sb.Append("\n\n\n");
+            error.Append("-----------錯誤訊息\n\n");
+            error.Append("報錯訊息多是因檔案讀取不完全,請將高版本對應WZ補齊\n");
+
+            //dealing map
+            String[] obj = { "Map.wz", "Map2.wz" };
+            String[] back = { "Map001.wz", "Map2.wz" };
+            String tile = "Map.wz";
+            String[] Mob = { "Mob.wz", "Mob2.wz", "Mob001.wz" };
+            String[] Sound = { "Sound.wz", "Sound001.wz", "Sound2.wz" };
+
+            HashSet<String> ObjIndex = data[0];
+            foreach(String s in ObjIndex)
+            {
+                WzNode n = null;
+                Boolean found = false;
+                foreach(String head in obj)
+                {
+                    n = FindHighNode(head + "/Obj/" + s);
+                    if (n != null)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) error.Append("[錯誤訊息] : 並未找到物件 " + "Obj/" + s + "\n");
+                if (n == null) continue;
+                WzDirectory dic = FindLowNode("Map.wz/Obj/" + s);
+                if(dic == null)
+                {
+                    error.Append("[錯誤訊息] : 並未找到原始目錄 " + "Obj/" + s + "\n");
+                    continue;
+                }
+                WzImage img = (WzImage)n.Tag;
+                img.ParseImage();
+                WzNode x = new WzNode(img);
+                ParseImg(x);
+                findJsonNode(x);
+                if (dic.GetImageByName(img.Name) != null)
+                {
+                    WzNode rem = new WzNode(dic.GetImageByName(img.Name));
+                    rem.DeleteWzNode();
+                }
+                dic.AddImage(img.DeepClone());
+                dic.GetImageByName(img.Name).Changed = true;
+                sb.Append("已成功新增物件 " + img.Name + "\n");
+            }
+
+           
+
+            HashSet<String> BackIndex = data[1];
+            
+            foreach (String s in BackIndex)
+            {
+                WzNode n = null;
+                Boolean found = false;
+                foreach (String head in back)
+                {
+                    n = FindHighNode(head + "/Back/" + s);
+                    if(n != null)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found && s.Length > 0) error.Append("[錯誤訊息] : 並未找到物件 " + "Back/" + s + "\n");
+                if (n == null) continue;
+                WzDirectory dic = FindLowNode("Map.wz/Back/" + s);
+                if (dic == null)
+                {
+                    error.Append("[錯誤訊息] : 並未找到原始目錄 " + "Back/" + s + "\n");
+                    continue;
+                }
+                WzImage img = (WzImage)n.Tag;
+                img.ParseImage();
+                WzNode x = new WzNode(img);
+                ParseImg(x);
+                findJsonNode(x);
+                if (dic.GetImageByName(img.Name) != null)
+                {
+                    WzNode rem = new WzNode(dic.GetImageByName(img.Name));
+                    rem.DeleteWzNode();
+                }
+                dic.AddImage(img.DeepClone());
+                dic.GetImageByName(img.Name).Changed = true;
+                sb.Append("已成功新增背景 " + img.Name + "\n");
+            }
+
+            HashSet<String> TileIndex = data[2];
+            foreach (String s in TileIndex)
+            {
+                WzNode n = FindHighNode(tile + "/Tile/" + s);
+                if (n == null) error.Append("[錯誤訊息] : 並未找到磚塊 " + "Tile/" + s + "\n");
+                if (n == null) continue;
+                WzDirectory dic = FindLowNode("Map.wz/Tile/" + s);
+                if (dic == null)
+                {
+                    error.Append("[錯誤訊息] : 並未找到原始目錄 " + "Tile/" + s + "\n");
+                    continue;
+                }
+                WzImage img = (WzImage)n.Tag;
+                img.ParseImage();
+                WzNode x = new WzNode(img);
+                ParseImg(x);
+                if (dic.GetImageByName(img.Name) != null)
+                {
+                    WzNode rem = new WzNode(dic.GetImageByName(img.Name));
+                    rem.DeleteWzNode();
+                }
+                dic.AddImage(img.DeepClone());
+                dic.GetImageByName(img.Name).Changed = true;
+                sb.Append("已成功新增磚塊 " + img.Name + "\n");
+            }
+
+            HashSet<String> NpcIndex = data[3];
+            foreach(String s in NpcIndex)
+            {
+                WzNode n = FindHighNode("Npc.wz/" + s);
+                if (n == null) error.Append("[錯誤訊息] : 並未找到NPC " + s + "\n");
+                if (n == null) continue;
+                WzDirectory dic = FindLowNode("Npc.wz/" + s);
+                if (dic == null)
+                {
+                    error.Append("[錯誤訊息] : 並未找到原始目錄 " + "Npc.wz/" + s + "\n");
+                    continue;
+                }
+                WzImage img = (WzImage)n.Tag;
+                img.ParseImage();
+                WzNode x = new WzNode(img);
+                ParseImg(x);
+                modifyLowNpc(x, data[6]);
+                if (dic.GetImageByName(img.Name) == null)
+                {
+                    dic.AddImage(img.DeepClone());
+                    dic.GetImageByName(img.Name).Changed = true;
+                    sb.Append("已成功新增NPC " + img.Name + "\n");
+                }
+            }
+
+            HashSet<String> MobData = data[4];
+            foreach (String s in MobData)
+            {
+                Boolean found = false;
+                WzNode n = null;
+                foreach (String head in Mob)
+                {
+                    n = FindHighNode(head + "/" + s);
+                    if (n != null)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) error.Append("[錯誤訊息] : 並未找到怪物 "  + s + "\n");
+                if (n == null) continue;
+                WzDirectory dic = FindLowNode("Mob.wz/" + s);
+                if (dic == null)
+                {
+                    error.Append("[錯誤訊息] : 並未找到原始目錄 " + "Mob.wz/" + s + "\n");
+                    continue;
+                }
+                WzImage img = (WzImage)n.Tag;
+                img.ParseImage();
+                WzNode x = new WzNode(img);
+                ParseImg(x);
+                if(LList[0].Version < 145)
+                {
+                    modifyLowMob(x);
+                }
+                addMobRevive(x, data[6], data[8]); //加資料到stringdata
+                if (dic.GetImageByName(img.Name) == null)
+                {
+                    dic.AddImage(img.DeepClone());
+                    dic.GetImageByName(img.Name).Changed = true;
+                    sb.Append("已成功新增怪物 " + img.Name + "\n");
+                }
+            }
+
+            HashSet<String> MapData = data[5];
+            Tuple<HashSet<String>, HashSet<String>> tu = getLowMapInfo();
+            HashSet<String> list = tu.Item1;
+            HashSet<String> main = tu.Item2;
+            foreach (String s in MapData)
+            {
+                String index = (int.Parse(s) / 100000000).ToString();
+                WzNode n = FindHighNode("Map002.wz/Map/Map" + index + "/" + s);
+                if (n == null) error.Append("[錯誤訊息] : 並未找到地圖 " + s + "\n");
+                if (n == null) continue;
+                WzImage img = (WzImage)n.Tag;
+                img.ParseImage();
+                foreach(WzImageProperty ii in img.WzProperties.ToArray())
+                {
+                    if (!main.Contains(ii.Name))
+                    {
+                        ii.Remove();
+                    }
+                    if(ii.Name == "info")
+                    {
+                        foreach (WzImageProperty px in ii.WzProperties.ToArray())
+                        {
+                            if (!list.Contains(px.Name))
+                            {
+                                px.Remove();
+                            }
+                        }
+                    }
+                }
+                img.Changed = true;
+                WzNode x = new WzNode(img);
+                ParseImg(x);
+                WzDirectory dic = FindTopNode("Map").WzDirectory;
+                WzDirectory dic2 = dic.GetDirectoryByName("Map");
+                if(dic2 == null)
+                {
+                    error.Append("[錯誤訊息] : 並未找到原始目錄 " + "Map.wz/Map\n");
+                    continue;
+                }
+                WzDirectory dic3 = dic2.GetDirectoryByName("Map" + index);
+                if(dic3 == null)
+                {
+                    WzDirectory newDic = new WzDirectory("Map" + index, FindTopNode("Map"));
+                    newDic.AddImage(img.DeepClone());
+                    dic2.AddDirectory(newDic);
+                }
+                else
+                {
+                    dic3.AddImage(img.DeepClone());
+                }   
+            }
+            sb.Append("已成功新增地圖(含MARK)\n");
+            //以下處理String
+            WzFile HString = getHighFile("String.wz");
+            WzFile LString = getLowFile("String.wz");
+            HashSet<String> StringData = data[6];
+            if(HString != null && LString != null)
+            {
+                foreach (String s in StringData)
+                {
+                    String[] x = s.Split(new char[] { '/' });
+                    WzImage Himg = HString.WzDirectory.GetImageByName(x[0]);
+                    WzImage Limg = LString.WzDirectory.GetImageByName(x[0]);
+                    if(Himg != null && Limg != null)
+                    {
+                        WzImageProperty prop = Himg.GetWzImageProperty(x[1]);
+                        if (prop != null && Limg.GetWzImageProperty(x[1]) == null)
+                        {
+                            Limg.AddProperty(prop.DeepClone());
+                            Limg.Changed = true;
+                        }
+                    }
+                    else
+                    {
+                        error.Append("[錯誤訊息] : 並未找到STRING " + s + "\n");
+                    }
+                }
+            }
+            
+
+            mark();
+
+            //以下處理Reactor
+            HashSet<String> ReactorData = data[7];
+            foreach(String s in ReactorData)
+            {
+                WzNode n = FindHighNode("Reactor.wz/" + s);
+                if (n == null) error.Append("[錯誤訊息] : 並未找到反應堆 " + s + "\n");
+                if (n == null) continue;
+                WzDirectory dic = FindLowNode("Reactor.wz/" + s);
+                if (dic == null)
+                {
+                    error.Append("[錯誤訊息] : 並未找到原始目錄 " + "Reactor.wz/" + s + "\n");
+                    continue;
+                }
+                WzImage img = (WzImage)n.Tag;
+                img.ParseImage();
+                WzNode x = new WzNode(img);
+                ParseImg(x);
+                if (dic.GetImageByName(img.Name) == null)
+                {
+                    dic.AddImage(img.DeepClone());
+                    dic.GetImageByName(img.Name).Changed = true;
+                    sb.Append("已成功新增Reactor " + img.Name + "\n");
+                }
+            }
+
+
+            HashSet<String> SoundData = data[8];
+            foreach(String s in SoundData)
+            {
+                WzFile ff = getLowFile("Sound.wz");
+                Boolean found = false;
+                if (ff != null)
+                {
+                    WzDirectory Lf = ff.WzDirectory;
+                    String[] path = s.Split(new char[] { '/' });
+                    foreach (String head in Sound)
+                    {
+                        WzDirectory Hf = getHighFile(head).WzDirectory;
+                        if (Hf == null) continue;
+                        WzImage img = Hf.GetImageByName(path[0] + ".img");
+                        if (img == null) continue;
+                        found = true;
+                        WzImage LImg = Lf.GetImageByName(path[0] + ".img");
+                        if (LImg == null)
+                        {
+                            Lf.AddImage(img.DeepClone());
+                            Lf.GetImageByName(path[0] + ".img").Changed = true;
+                            break;
+                        }
+                        else
+                        {
+                            WzImageProperty prop = img.GetWzImageProperty(path[1]);
+                            if (prop == null) continue;
+                            WzImageProperty Lprop = LImg.GetWzImageProperty(path[1]);
+                            if (Lprop == null)
+                            {
+                                LImg.AddProperty(prop);
+                                LImg.Changed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if(!found) error.Append("[錯誤訊息] : 並未找到音效 " + s + "\n");
+            }
+            MessageBox.Show(sb.ToString() + "\n" + error.ToString(), "地圖同步程序");
+        }
+
+       
+
+        public void mark()
+        {
+            WzFile HString = getHighFile("String.wz");
+            WzFile LString = getLowFile("String.wz");
+            if(HString != null && LString != null)
+            {
+                WzImage mapStringImg = HString.WzDirectory.GetImageByName("Map.img");
+                WzImage toolTipImg = HString.WzDirectory.GetImageByName("ToolTipHelp.img");
+                if(mapStringImg != null)
+                {
+                    mapStringImg.ParseImage();
+                    if (LString.WzDirectory.GetImageByName("Map.img") != null)
+                    {
+                        WzNode rem = new WzNode(LString.WzDirectory.GetImageByName("Map.img"));
+                        rem.DeleteWzNode();
+                    }
+                    LString.WzDirectory.AddImage(mapStringImg);
+                    LString.WzDirectory.GetImageByName("Map.img").Changed = true;
+
+                }
+
+                if(toolTipImg != null)
+                {
+                    toolTipImg.ParseImage();
+                    WzImage i = LString.WzDirectory.GetImageByName("ToolTipHelp.img");
+                    if (i != null)
+                    {
+                        //WzNode rem = new WzNode(LString.WzDirectory.GetImageByName("ToolTipHelp.img"));
+                        //rem.DeleteWzNode();
+                        WzImageProperty tool = i.GetWzImageProperty("Mapobject");
+                        WzImageProperty toolH = toolTipImg.GetWzImageProperty("Mapobject");
+                        if (tool != null && toolH != null)
+                        {
+                            foreach (WzImageProperty tip in toolH.WzProperties)
+                            {
+                                if (tool.GetProperty(tip.Name) == null)
+                                {
+                                    ((WzSubProperty)tool).AddProperty(tip.DeepClone());
+                                }
+
+                            }
+                        }
+                    }
+                    //LString.WzDirectory.AddImage(toolTipImg);
+                    i.Changed = true;
+                }
+            }
+            
+
+
+            WzFile Hmark = getHighFile("Map.wz");
+            WzFile Lmark = FindTopNode("Map");
+            if(Hmark != null && Lmark != null)
+            {
+                WzImage HImg = Hmark.WzDirectory.GetImageByName("MapHelper.img");
+                WzImage LImg = Lmark.WzDirectory.GetImageByName("MapHelper.img");
+                if(HImg != null && LImg != null)
+                {
+                    WzImageProperty HMMark = HImg.GetWzImageProperty("mark");
+                    if(HMMark != null)
+                    {
+                        WzNode o = new WzNode(HMMark);
+                        ParseNode(o);
+                        if (LImg.GetWzImageProperty("mark") != null)
+                        {
+                            LImg.RemoveProperty(LImg.GetWzImageProperty("mark"));
+                        }
+                       
+                        LImg.AddProperty(HMMark);
+                        LImg.Changed = true;
+                    }                
+                }
+            } 
+        }
+
+
+        public void ReadNode()
+        {
+            List<HashSet<String>> read = new List<HashSet<String>>();
+            Queue<Tuple<WzNode, int>> que = new Queue<Tuple<WzNode, int>>();
+
+            que.Enqueue(new Tuple<WzNode,int>((WzNode)DataTree.SelectedNode, 0));
+
+   
+            while(que.Count > 0)
+            {
+                Tuple<WzNode, int> current = que.Dequeue();
+                int layer = current.Item2;
+                WzNode node = current.Item1;
+
+                if(read.Count == layer)
+                {
+                    read.Add(new HashSet<String>());
+                }
+
+                read[layer].Add(node.Text);
+                
+                if((WzObject)node.Tag is WzImage)
+                {
+                    WzImage img = (WzImage)node.Tag;
+                    img.ParseImage();
+                    foreach(WzImageProperty prop in img.WzProperties)
+                    {
+                        WzNode n = new WzNode(prop);
+                        que.Enqueue(new Tuple<WzNode,int>(n, layer+1));
+                    }
+                }
+                else
+                {
+                    foreach(WzNode n in node.Nodes)
+                    {
+                        que.Enqueue(new Tuple<WzNode, int>(n, layer + 1));
+                    }
+                }
+            }
+
+            StringBuilder sb = new StringBuilder();
+            int a = 0;
+            foreach(HashSet<String> set in read)
+            {
+                sb.Append(a);
+                foreach(String n in set)
+                {
+                    int num = 0;
+                    /*if (!int.TryParse(n, out num) && !n.Contains(".img"))*/ sb.Append(n + ",");
+                }
+                sb.Append("\n\n");
+                a++;
+            }
+
+            MessageBox.Show(sb.ToString());
+        }
+
+        private WzFile getLowWzFile(String name)
+        {
+            foreach(WzNode n in DataTree.Nodes)
+            {
+                WzFile file = (WzFile)n.Tag;
+                if(file.Name == name && file.Version < 150)
+                {
+                    return file;
+                }
+            }
+            return null;
+        }
+
+        private WzFile getHighWzFile(String name)
+        {
+            foreach (WzNode n in DataTree.Nodes)
+            {
+                WzFile file = (WzFile)n.Tag;
+                if (file.Name == name && file.Version >= 150)
+                {
+                    return file;
+                }
+            }
+            return null;
+        }
+
+        private WzImageProperty getSkillPath(String path)
+        {
+            WzFile LS = getLowWzFile("Skill.wz");
+            String[] p = path.Split(new char[] { '/' });
+            WzImage img = LS.WzDirectory.GetImageByName(p[0]);
+            if (img == null) return null;
+
+            WzImageProperty s = img.GetWzImageProperty(p[1]);
+            if (s == null) return null;
+
+            WzImageProperty skill = s.GetProperty(p[2]);
+            if (skill == null) return null;
+
+            if (skill.GetProperty("effect") == null) return null;
+            foreach(WzImageProperty prop in skill.WzProperties.ToArray())
+            {
+                if (prop.Name.Contains("effect")) prop.Remove();
+            }
+
+            return skill;
+        }
+
+        public void changeSkillAnimation()
+        {
+            WzFile LS = getLowWzFile("Skill.wz");
+            WzFile HS = getHighWzFile("Skill.wz");
+
+            if(LS == null)
+            {
+                MessageBox.Show("請加載低版本Skill.wz");
+            }
+
+            foreach(WzNode n in DataTree.SelectedNodes)
+            {
+                WzObject obj = (WzObject)n.Tag;
+                if (!(obj is WzImage)) continue;
+
+                WzImage img = (WzImage)obj;
+                WzImageProperty s = img.GetWzImageProperty("skill");
+                foreach(WzImageProperty prop in s.WzProperties)
+                {
+                    WzImageProperty effect = prop.GetProperty("effect");
+                    if(effect == null) continue;
+                    WzImageProperty LP = getSkillPath(img.Name + "/skill/" + prop.Name);
+                    if (LP != null)
+                    {
+                        foreach (WzImageProperty p in prop.WzProperties)
+                        {
+                            if (p.Name.Contains("effect"))
+                            {
+                                WzNode nx = new WzNode(p);
+                                ParseImg(nx);
+                                ((WzSubProperty)LP).AddProperty(p.DeepClone());
+
+                            }
+                        }
+                        LP.ParentImage.Changed = true;
+
+                        if (LP.ParentImage.Name.Split(new char[] { '.' })[0].Length <= 3)
+                        {
+                            foreach (WzImageProperty pic in LP.WzProperties)
+                            {
+                                if (pic.Name.Contains("effect"))
+                                {
+                                    foreach (WzImageProperty canvas in pic.WzProperties)
+                                    {
+                                        if (canvas is WzCanvasProperty)
+                                        {
+                                            ((WzCanvasProperty)canvas).PngProperty.ListWzUsed = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        LP.ParentImage.Changed = true;
+                    }
+                    
+                }
+            }
+        }
+
+        private WzImageProperty getSillById(String id)
+        {
+            WzDirectory dic = FindTopNode("Skill").WzDirectory;
+            String imgName = "";
+            if(id.Length == 8)
+            {
+                imgName = id.Substring(0, 4) + ".img";
+            }
+            else if(id.Length == 7)
+            {
+                imgName = id.Substring(0, 3) + ".img";
+            }
+
+            WzImage img = dic.GetImageByName(imgName);
+            if (img == null) return null;
+
+            WzImageProperty next = img.GetWzImageProperty("skill");
+            if (next == null) return null;
+
+            WzImageProperty ret = next.GetProperty(id);
+            return ret;
+        }
+
+        public void editSkill(StreamReader sr)
+        {
+            String line = sr.ReadLine();
+            Boolean multiMob = false;
+            while(line != null)
+            {
+                if (line == "允許攻擊多怪") multiMob = true;
+                String[] data = line.Split(new char[] { '/' });
+                String id = data[0];
+                WzImageProperty skill = getSillById(id);
+                int[] list = new int[8];
+
+                if (skill != null)
+                {
+                    WzImageProperty level = skill.GetProperty("level");
+
+                    for (int i = 1; i < data.Length; i++)
+                    {
+                        String para = data[i];
+
+                        if (para.Contains("傷害"))
+                        {
+                            String modify = para.Split(new char[] { '害' })[1];
+                            int add = 0;
+                            int percent = 0;
+                            if (modify.Contains("+"))
+                            {
+                                if (modify.Contains("%"))
+                                {
+                                    percent = int.Parse(modify.Substring(1, modify.Length - 2));
+                                }
+                                else
+                                {
+                                    add = int.Parse(modify.Substring(1, modify.Length-1));
+                                }
+
+                            }
+                            else if (modify.Contains("-"))
+                            {
+                                if (modify.Contains("%"))
+                                {
+                                    percent = int.Parse(modify.Substring(1, modify.Length - 2)) * -1;
+                                }
+                                else
+                                {
+                                    add = int.Parse(modify.Substring(1, modify.Length-1)) * -1;
+                                }
+                            }
+                            list[0] = add;
+                            list[1] = percent;
+                        }
+
+                        if (para.Contains("段數"))
+                        {
+                            String modify = para.Split(new char[] { '數' })[1];
+                            int add = 0;
+                            if (modify.Contains("+"))
+                            {
+                                add = int.Parse(modify.Substring(1, modify.Length - 1));
+
+                            }
+                            else if (modify.Contains("-"))
+                            {
+                                add = int.Parse(modify.Substring(1, modify.Length - 1)) * -1;
+                            }
+
+
+                            list[2] = add;
+                        }
+
+                        if (para.Contains("CD"))
+                        {
+                            String modify = para.Split(new char[] { 'D' })[1];
+                            int add = 0;
+                            if (modify.Contains("+"))
+                            {
+                                add = int.Parse(modify.Substring(1, modify.Length - 1));
+
+                            }
+                            else if (modify.Contains("-"))
+                            {
+                                add = int.Parse(modify.Substring(1, modify.Length - 1)) * -1;
+                            }else if(modify == "0")
+                            {
+                                add = 999;
+                            }
+
+                            list[3] = add;
+                        }
+
+                        if (para.Contains("打怪"))
+                        {
+                            String modify = para.Split(new char[] { '怪' })[1];
+                            int add = 0;
+                            if (modify.Contains("+"))
+                            {
+                                add = int.Parse(modify.Substring(1, modify.Length - 1));
+
+                            }
+                            else if (modify.Contains("-"))
+                            {
+                                add = int.Parse(modify.Substring(1, modify.Length - 1)) * -1;
+                            }
+                            list[4] = add;
+                        }
+
+                        if (para.Contains("時間"))
+                        {
+                            String modify = para.Split(new char[] { '間' })[1];
+                            int add = 0;
+                            if (modify.Contains("+"))
+                            {
+                                add = int.Parse(modify.Substring(1, modify.Length - 1));
+
+                            }
+                            else if (modify.Contains("-"))
+                            {
+                                add = int.Parse(modify.Substring(1, modify.Length - 1)) * -1;
+                            }
+                            list[5] = add;
+                        }
+
+                        if (para.Contains("範圍"))
+                        {
+                            String modify = para.Split(new char[] { '圍' })[1];
+                            int addX = 0;
+                            int addY = 0;
+                            if (modify.Contains("X"))
+                            {
+                                if (modify.Contains("+")) 
+                                {
+                                    addX = int.Parse(modify.Substring(2, modify.Length - 2));
+                                }else if (modify.Contains("-"))
+                                {
+                                    addX = int.Parse(modify.Substring(2, modify.Length - 2))*-1;
+                                }
+                                
+
+                            }
+                            else if (modify.Contains("Y"))
+                            {
+                                if (modify.Contains("+"))
+                                {
+                                    addY = int.Parse(modify.Substring(2, modify.Length - 2));
+                                }
+                                else if (modify.Contains("-"))
+                                {
+                                    addY = int.Parse(modify.Substring(2, modify.Length - 2)) * -1;
+                                }
+                            }
+                            else
+                            {
+                                if (modify.Contains("+"))
+                                {
+                                    addY = int.Parse(modify.Substring(1, modify.Length - 2));
+                                    addX = int.Parse(modify.Substring(1, modify.Length - 2));
+                                }
+                                else if (modify.Contains("-"))
+                                {
+                                    addY = int.Parse(modify.Substring(1, modify.Length - 2)) * -1;
+                                    addX = int.Parse(modify.Substring(1, modify.Length - 2)) * -1;
+                                }
+                            }
+                            list[6] = addX;
+                            list[7] = addY;
+                        }
+                    }
+
+                   
+                    if (level == null) continue;
+                    foreach (WzImageProperty p in level.WzProperties.ToArray())
+                    {
+                        //傷害,傷害%,段數,cd,打怪數,時間,範圍X,範圍Y,
+                        //處理傷害
+                        WzImageProperty damage = p.GetProperty("damage");
+
+                        if (damage != null)
+                        {
+                            if (list[0] != 0)
+                            {
+                                if (damage is WzIntProperty)
+                                {
+                                    int value = ((WzIntProperty)damage).Value;
+                                    ((WzIntProperty)damage).Value = value + list[0];
+                                }
+                                else if (damage is WzStringProperty)
+                                {
+                                    int value = int.Parse(((WzStringProperty)damage).Value);
+                                    ((WzStringProperty)damage).Value = (value + list[0]).ToString();
+                                }
+                            }
+
+                            if (list[1] != 0)
+                            {
+                                if (damage is WzIntProperty)
+                                {
+                                    int value = ((WzIntProperty)damage).Value;
+                                    ((WzIntProperty)damage).Value = value * (100 + list[1]) / 100;
+                                }
+                                else if (damage is WzStringProperty)
+                                {
+                                    int value = int.Parse(((WzStringProperty)damage).Value);
+                                    ((WzStringProperty)damage).Value = (value * (100 + list[1]) / 100).ToString();
+                                }
+                            }
+                            
+                        }
+
+                        //處理段數
+                        WzImageProperty bulletC = p.GetProperty("bulletCount");
+                        WzImageProperty attackC = p.GetProperty("attackCount");
+                        if(bulletC != null && list[2] != 0)
+                        {
+                            if (bulletC is WzIntProperty)
+                            {
+                                int value = ((WzIntProperty)bulletC).Value;
+                                ((WzIntProperty)bulletC).Value = value + list[2];
+                            }
+                            else if (bulletC is WzStringProperty)
+                            {
+                                int value = int.Parse(((WzStringProperty)bulletC).Value);
+                                ((WzStringProperty)bulletC).Value = (value + list[2]).ToString();
+                            }
+                        }
+
+                        if(attackC != null && list[2] != 0)
+                        {
+                            if (attackC is WzIntProperty)
+                            {
+                                int value = ((WzIntProperty)attackC).Value;
+                                ((WzIntProperty)attackC).Value = value + list[2];
+                            }
+                            else if (attackC is WzStringProperty)
+                            {
+                                int value = int.Parse(((WzStringProperty)attackC).Value);
+                                ((WzStringProperty)attackC).Value = (value + list[2]).ToString();
+                            }
+                        }
+                        else if(list[2] != 0)
+                        {
+                            WzIntProperty newAttackC = null;
+
+                            if (skill.GetProperty("ball") == null)
+                            {
+                                newAttackC = new WzIntProperty("attackCount", list[2]);
+                            }
+                            else
+                            {
+                                newAttackC = new WzIntProperty("bulletCount", list[2]);
+                            }
+                            ((WzSubProperty)p).AddProperty(newAttackC);
+                        }
+
+                        //處理CD
+                        WzImageProperty cooldown = p.GetProperty("cooltime");
+                        if (cooldown != null && list[3] != 0)
+                        {
+                            if (cooldown is WzIntProperty)
+                            {
+                                int value = ((WzIntProperty)cooldown).Value;
+                                if(list[3] == 999)
+                                {
+                                    ((WzIntProperty)cooldown).Value = 0;
+                                }
+                                else
+                                {
+                                    ((WzIntProperty)cooldown).Value = value + list[3];
+                                }
+                                
+                            }
+                            else if (cooldown is WzStringProperty)
+                            {
+                                int value = int.Parse(((WzStringProperty)cooldown).Value);
+                                if(list[3] == 999)
+                                {
+                                    ((WzStringProperty)cooldown).Value = "0";
+                                }
+                                else
+                                {
+                                    ((WzStringProperty)cooldown).Value = (value + list[3]).ToString();
+                                }
+                               
+                            }
+                        }
+
+                        //處理打怪數
+                        WzImageProperty mobC = p.GetProperty("mobCount");
+                        if(mobC != null && list[4] != 0)
+                        {
+                            if (mobC is WzIntProperty)
+                            {
+                                int value = ((WzIntProperty)mobC).Value;
+                                ((WzIntProperty)mobC).Value = value + list[4];
+                            }
+                            else if (mobC is WzStringProperty)
+                            {
+                                int value = int.Parse(((WzStringProperty)mobC).Value);
+                                ((WzStringProperty)mobC).Value = (value + list[4]).ToString();
+                            }
+                        }
+
+                        if(mobC == null && multiMob && list[4] != 0)
+                        {
+                            WzIntProperty newMobC = new WzIntProperty("mobCount", list[4]);
+                            WzVectorProperty rb = new WzVectorProperty("rb", new WzIntProperty("X", 150), new WzIntProperty("Y", 150));
+                            WzVectorProperty lt = new WzVectorProperty("lt", new WzIntProperty("X", -150), new WzIntProperty("Y", -150));
+                            ((WzSubProperty)p).AddProperty(newMobC);
+                            ((WzSubProperty)p).AddProperty(rb);
+                            ((WzSubProperty)p).AddProperty(lt);
+                        }
+
+                        //處理時間
+                        WzImageProperty time = p.GetProperty("time");
+                        if(time != null && list[5] != 0)
+                        {
+                            if (time is WzIntProperty)
+                            {
+                                int value = ((WzIntProperty)time).Value;
+                                ((WzIntProperty)time).Value = value + list[5];
+                            }
+                            else if (time is WzStringProperty)
+                            {
+                                int value = int.Parse(((WzStringProperty)time).Value);
+                                ((WzStringProperty)time).Value = (value + list[5]).ToString();
+                            }
+                        }
+                        
+                        //處理範圍
+                        WzImageProperty range = p.GetProperty("range");
+                        WzImageProperty rbR = p.GetProperty("rb");
+                        WzImageProperty ltR = p.GetProperty("lt");
+                        if(range != null && list[6] != 0)
+                        {
+                            if (range is WzIntProperty)
+                            {
+                                int value = ((WzIntProperty)range).Value;
+                                ((WzIntProperty)range).Value = value + list[6];
+                            }
+                            else if (range is WzStringProperty)
+                            {
+                                int value = int.Parse(((WzStringProperty)range).Value);
+                                ((WzStringProperty)range).Value = (value + list[6]).ToString();
+                            }
+                        }
+
+                        if(rbR != null && ltR != null && (list[6] != 0 || list[7] != 0))
+                        {
+                            
+                            int xr = ((WzVectorProperty)rbR).X.Value * (100 + list[6]) / 100;
+                            int yr = ((WzVectorProperty)rbR).Y.Value * (100 + list[7]) / 100;
+                            int xl = ((WzVectorProperty)ltR).X.Value * (100 + list[6]) / 100;
+                            int yl = ((WzVectorProperty)ltR).Y.Value * (100 + list[7]) / 100;
+
+                            ((WzVectorProperty)rbR).X.Value = xr;
+                            ((WzVectorProperty)rbR).Y.Value = yr;
+                            ((WzVectorProperty)ltR).X.Value = xl;
+                            ((WzVectorProperty)ltR).Y.Value = yl;
+                        }
+
+                    }
+
+                    skill.ParentImage.Changed = true;
+                }
+                line = sr.ReadLine();
+            }
+
+            MessageBox.Show("修改完畢", "技能平衡");
+        }
+
+        private WzFile getTopNode(String name)
+        {
+            foreach(WzNode n in DataTree.Nodes)
+            {
+                if (n.Text == name) return (WzFile)n.Tag;
+            }
+            return null;
+        }
+
+
+        private int GetIntValue(WzImageProperty p)
+        {
+            if (p == null) return -1;
+
+            int ret = 0;
+            if (p is WzIntProperty) ret = ((WzIntProperty)p).Value;
+            else if (p is WzStringProperty)
+            {
+                String s = ((WzStringProperty)p).Value;
+                if (int.TryParse(s, out ret))
+                {
+                    ret = int.Parse(s);
+                }
+            }
+            return ret;
+        }
+
+
+        private Boolean IsValidCash(Dictionary<String, int> data, List<Tuple<String, int>> check)
+        {
+            foreach(Tuple<String, int> pair in check)
+            {
+                String name = pair.Item1;
+                int v = pair.Item2;
+                if (!data.ContainsKey("cash")) return false;
+                else if (data.ContainsKey(name) && data[name] != v)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private SortedSet<int> GetCashItem(String name, List<Tuple<String, int>> check)
+        {
+            SortedSet<int> ret = new SortedSet<int>();
+            foreach (WzFile file in cashFile)
+            {
+                WzDirectory dic = file.WzDirectory.GetDirectoryByName(name);
+
+                if (dic != null)
+                {
+                    foreach (WzImage img in dic.WzImages)
+                    {
+                        WzImageProperty info = img.GetWzImageProperty("info");
+                        Dictionary<String, int> data = new Dictionary<String, int>();
+                        foreach (WzImageProperty p in info.WzProperties)
+                        {
+                            data.Add(p.Name, GetIntValue(p));
+                        }
+                        if (IsValidCash(data, check))
+                        {
+                            ret.Add(int.Parse(img.Name.Split(new char[] { '.' })[0]));
+                        }
+                    }
+                }
+            }
+            return ret;
+        }
+
+        private WzImage InitCommodity()
+        {
+            WzFile file = getTopNode("Etc.wz");
+            WzImage commodity = file.WzDirectory.GetImageByName("Commodity.img");
+            if(commodity != null) commodity.Remove();
+            WzImage newCommodity = new WzImage("Commodity.img");
+            file.WzDirectory.AddImage(newCommodity);
+            return newCommodity;
+        }
+
+        private void AddNewCommodity(WzImage img, int id, int price, int itemid, int SN)
+        {
+            WzSubProperty sub = new WzSubProperty(id.ToString());
+            WzIntProperty count = new WzIntProperty("Count", 1);
+            WzIntProperty Gender = new WzIntProperty("Gender", 2);
+            WzIntProperty Itemid = new WzIntProperty("Itemid", itemid);
+            WzIntProperty OnSale = new WzIntProperty("Onsale", 0);
+            WzIntProperty Period = new WzIntProperty("Period", 0);
+            WzIntProperty Price = new WzIntProperty("Price", price);
+            WzIntProperty Priority = new WzIntProperty("Priority", 9);
+            WzIntProperty SNN = new WzIntProperty("SN", SN);
+            sub.AddProperty(count);
+            sub.AddProperty(Gender);
+            sub.AddProperty(Itemid);
+            sub.AddProperty(OnSale);
+            sub.AddProperty(Period);
+            sub.AddProperty(Price);
+            sub.AddProperty(Priority);
+            sub.AddProperty(SNN);
+            img.AddProperty(sub);
+        }
+
+        private List<WzFile> cashFile = new List<WzFile>();
+
+
+        public void CreateCommodity()
+
+        {
+            foreach(WzNode node in DataTree.Nodes)
+            {
+                if (node.Text.Contains("Character")) cashFile.Add((WzFile)node.Tag);
+            }
+
+            String[] type = { "Cap", "Accessory", "Accessory", "LongCoat", "Coat", "Pants", "Shoes", "Gloves", "Weapon", "Ring", "", "Cape"};
+            List<SortedSet<int>> data = new List<SortedSet<int>>();
+
+            List<Tuple<String, int>> check = new List<Tuple<String, int>>();
+            /**add parameter*/
+            check.Add(new Tuple<String, int>("cash", 1));
+            check.Add(new Tuple<String, int>("incPAD", 0));
+            check.Add(new Tuple<String, int>("incMAD", 0));
+
+            foreach (String s in type)
+            {
+                data.Add(GetCashItem(s,check));
+            }
+
+            WzImage img = InitCommodity();
+            int index = 0;
+            int serial = 20000000;
+            for (int i = 0; i < data.Count; i++)
+            {
+                int num = 0;
+                foreach(int item in data[i])
+                {
+                    int sn = serial + i * 100000 + num;
+                    AddNewCommodity(img, index, 1, item, sn);
+                    num++;
+                    index++;
+                }
+            }
+            img.Changed = true;
+        }
+
+
+        #endregion
     }
 }

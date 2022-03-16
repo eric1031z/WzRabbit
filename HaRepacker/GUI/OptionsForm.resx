@@ -144,7 +144,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;sortBox.ZOrder" xml:space="preserve">
-    <value>13</value>
+    <value>14</value>
   </data>
   <data name="loadRelated.Location" type="System.Drawing.Point, System.Drawing">
     <value>11, 80</value>
@@ -172,7 +172,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;loadRelated.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="okButton.Location" type="System.Drawing.Point, System.Drawing">
     <value>-1, 253</value>
@@ -196,7 +196,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;okButton.ZOrder" xml:space="preserve">
-    <value>12</value>
+    <value>13</value>
   </data>
   <data name="cancelButton.Location" type="System.Drawing.Point, System.Drawing">
     <value>165, 253</value>
@@ -220,7 +220,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;cancelButton.ZOrder" xml:space="preserve">
-    <value>11</value>
+    <value>12</value>
   </data>
   <data name="label1.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -247,7 +247,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>10</value>
+    <value>11</value>
   </data>
   <data name="lineBreakBox.Items" xml:space="preserve">
     <value>None</value>
@@ -277,7 +277,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;lineBreakBox.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>10</value>
   </data>
   <data name="label2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -304,7 +304,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>9</value>
   </data>
   <data name="apngIncompEnable.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -331,13 +331,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;apngIncompEnable.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>8</value>
   </data>
   <data name="defXmlFolderEnable.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
   <data name="defXmlFolderEnable.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 120</value>
+    <value>11, 125</value>
   </data>
   <data name="defXmlFolderEnable.Size" type="System.Drawing.Size, System.Drawing">
     <value>127, 17</value>
@@ -358,7 +358,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;defXmlFolderEnable.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>7</value>
   </data>
   <data name="defXmlFolderBox.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -382,7 +382,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;defXmlFolderBox.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>6</value>
   </data>
   <data name="browse.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -409,7 +409,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;browse.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>5</value>
   </data>
   <data name="autoAssociateBox.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -436,7 +436,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;autoAssociateBox.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>4</value>
   </data>
   <data name="themeColor__comboBox.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Popup</value>
@@ -466,7 +466,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;themeColor__comboBox.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>1</value>
   </data>
   <data name="label3.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -496,7 +496,37 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
+  </data>
+  <data name="mapEdit.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="mapEdit.Location" type="System.Drawing.Point, System.Drawing">
+    <value>11, 102</value>
+  </data>
+  <data name="mapEdit.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>2, 2, 2, 2</value>
+  </data>
+  <data name="mapEdit.Size" type="System.Drawing.Size, System.Drawing">
+    <value>311, 18</value>
+  </data>
+  <data name="mapEdit.TabIndex" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="mapEdit.Text" xml:space="preserve">
+    <value>新增地圖模式</value>
+  </data>
+  <data name="&gt;&gt;mapEdit.Name" xml:space="preserve">
+    <value>mapEdit</value>
+  </data>
+  <data name="&gt;&gt;mapEdit.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;mapEdit.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;mapEdit.ZOrder" xml:space="preserve">
+    <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
@@ -509,6 +539,30 @@
   </data>
   <data name="$this.Font" type="System.Drawing.Font, System.Drawing">
     <value>Segoe UI, 8pt</value>
+  </data>
+  <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        AAABAAEAEBAAAAAAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAHYAAAB2AAAAAAAAAAAA
+        AAAAAAAAAAAAAAAAAAAAAAAA////BN7e/6PZ2P/z2Nf//uTi//js7P/N7u7/av///wQAAAAAAAAAAAAA
+        AAAAAAAAAAAAAAAAAAAAAAAA6ur/DNra/+nV1P//2dj//+fn+f/p6Pn/7u3//+7t///v7f+639//CAAA
+        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAN7d/7TT0f//ysX//+bl//+urbT/pqOp/+vp///X0f//5+b//+/s
+        /3wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADZ2P/30Mz//7209P/b1/L/xL30/7628//f3fb/vrXw/+Dc
+        ///u7v/bAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA19b//dXU///Qzu3/3Nrp/+zr///s6///4eDw/9rZ
+        6P/u7f//7u3/9////wEAAAAAAAAAAAAAAAAAAAAAAAAAANrZ/+zV1P//2dj//+7t///u7f//7u3//+7t
+        ///u7f//7u3//+7t/8cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg3v9j1dT//9XU///n5v//7u3//+7t
+        ///u7f//7u3//+7t///u7v9KAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN/f/6bV1f//19b//+no
+        ///u7f//7u3//+7t//7u7v97AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANLS/yLV1P/Q2tj//9jX
+        //nW1f/+3Nv/8ufm/+nu7f//7u3/0PDw/yIAAAAAAAAAAAAAAAAAAAAAAAAAANbW/yXV1P/n09D//9TS
+        ///V1P/D1dX/0tXU/9be3f/K7Or//+rn///u7P/q7Oz/KAAAAAAAAAAAAAAAANPT/x3V1P/i09D//8W9
+        ///V1P//1dX/bNfX/xPT0/8X7+z/be7t///Kwv//6OX//+7t/+Ht7f8cAAAAAL+//wTV1P/E09H//8K5
+        ///IwP//1dT//9XV/yoAAAAAAAAAAO7u/y3u7f//z8j//8e9///r6f//7u3/yP///wbW0/9X1dT//8a+
+        ///Atf//z8r//9XU/9wAAAAAAAAAAAAAAAAAAAAA7u3/3t/b///Atf//zcX//+7t///t7f9W1dX/hdPS
+        ///Atf//wrj//9XU///V1f9/AAAAAAAAAAAAAAAAAAAAAO3t/4Ht7P//xbv//8C1///q6P//7e3/gtXV
+        /2HV1P//y8X//9LP///V1P/p09P/FwAAAAAAAAAAAAAAAAAAAADp6f8X7uz/6ujl///Y0///7u3//+/s
+        /1/f3/8I1dX/qNXU//PV1P+919L/LQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO7u/y7u7v++7u3/8+7t
+        /6j///8H8A8AAOAHAADgBwAA4AcAAOADAADgBwAA4AcAAPAPAADgBwAAwAMAAIABAAABgAAAA8AAAAPA
+        AAADwAAAB+AAAA==
+</value>
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterParent</value>

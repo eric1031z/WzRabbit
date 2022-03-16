@@ -45,6 +45,7 @@ namespace HaRepacker.GUI
             this.autoAssociateBox = new System.Windows.Forms.CheckBox();
             this.themeColor__comboBox = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
+            this.mapEdit = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // sortBox
@@ -139,10 +140,17 @@ namespace HaRepacker.GUI
             resources.ApplyResources(this.label3, "label3");
             this.label3.Name = "label3";
             // 
+            // mapEdit
+            // 
+            resources.ApplyResources(this.mapEdit, "mapEdit");
+            this.mapEdit.Name = "mapEdit";
+            this.mapEdit.UseVisualStyleBackColor = true;
+            // 
             // OptionsForm
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.mapEdit);
             this.Controls.Add(this.themeColor__comboBox);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.loadRelated);
@@ -181,5 +189,6 @@ namespace HaRepacker.GUI
         private System.Windows.Forms.CheckBox autoAssociateBox;
         private System.Windows.Forms.ComboBox themeColor__comboBox;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.CheckBox mapEdit;
     }
 }

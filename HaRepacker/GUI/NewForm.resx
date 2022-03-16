@@ -526,7 +526,7 @@
     <value>versionBox</value>
   </data>
   <data name="&gt;&gt;versionBox.Type" xml:space="preserve">
-    <value>HaRepacker.GUI.Input.IntegerInput, HaRepackerResurrected, Version=4.2.4.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>HaRepacker.GUI.Input.IntegerInput, WzRabbit, Version=4.2.4.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;versionBox.Parent" xml:space="preserve">
     <value>$this</value>
@@ -545,6 +545,30 @@
   </data>
   <data name="$this.Font" type="System.Drawing.Font, System.Drawing">
     <value>Segoe UI, 8pt</value>
+  </data>
+  <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        AAABAAEAEBAAAAAAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAHYAAAB2AAAAAAAAAAAA
+        AAAAAAAAAAAAAAAAAAAAAAAA////BN7e/6PZ2P/z2Nf//uTi//js7P/N7u7/av///wQAAAAAAAAAAAAA
+        AAAAAAAAAAAAAAAAAAAAAAAA6ur/DNra/+nV1P//2dj//+fn+f/p6Pn/7u3//+7t///v7f+639//CAAA
+        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAN7d/7TT0f//ysX//+bl//+urbT/pqOp/+vp///X0f//5+b//+/s
+        /3wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADZ2P/30Mz//7209P/b1/L/xL30/7628//f3fb/vrXw/+Dc
+        ///u7v/bAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA19b//dXU///Qzu3/3Nrp/+zr///s6///4eDw/9rZ
+        6P/u7f//7u3/9////wEAAAAAAAAAAAAAAAAAAAAAAAAAANrZ/+zV1P//2dj//+7t///u7f//7u3//+7t
+        ///u7f//7u3//+7t/8cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg3v9j1dT//9XU///n5v//7u3//+7t
+        ///u7f//7u3//+7t///u7v9KAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN/f/6bV1f//19b//+no
+        ///u7f//7u3//+7t//7u7v97AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANLS/yLV1P/Q2tj//9jX
+        //nW1f/+3Nv/8ufm/+nu7f//7u3/0PDw/yIAAAAAAAAAAAAAAAAAAAAAAAAAANbW/yXV1P/n09D//9TS
+        ///V1P/D1dX/0tXU/9be3f/K7Or//+rn///u7P/q7Oz/KAAAAAAAAAAAAAAAANPT/x3V1P/i09D//8W9
+        ///V1P//1dX/bNfX/xPT0/8X7+z/be7t///Kwv//6OX//+7t/+Ht7f8cAAAAAL+//wTV1P/E09H//8K5
+        ///IwP//1dT//9XV/yoAAAAAAAAAAO7u/y3u7f//z8j//8e9///r6f//7u3/yP///wbW0/9X1dT//8a+
+        ///Atf//z8r//9XU/9wAAAAAAAAAAAAAAAAAAAAA7u3/3t/b///Atf//zcX//+7t///t7f9W1dX/hdPS
+        ///Atf//wrj//9XU///V1f9/AAAAAAAAAAAAAAAAAAAAAO3t/4Ht7P//xbv//8C1///q6P//7e3/gtXV
+        /2HV1P//y8X//9LP///V1P/p09P/FwAAAAAAAAAAAAAAAAAAAADp6f8X7uz/6ujl///Y0///7u3//+/s
+        /1/f3/8I1dX/qNXU//PV1P+919L/LQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO7u/y7u7v++7u3/8+7t
+        /6j///8H8A8AAOAHAADgBwAA4AcAAOADAADgBwAA4AcAAPAPAADgBwAAwAMAAIABAAABgAAAA8AAAAPA
+        AAADwAAAB+AAAA==
+</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
     <value>New...</value>
